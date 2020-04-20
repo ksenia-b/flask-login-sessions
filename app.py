@@ -1,7 +1,8 @@
-from flask import Flask, render_template, request, session, redirect, url_for, g
+from flask import Flask, render_template, request, session, redirect, url_for, g, abort
 
 app = Flask(__name__)
 app.secret_key = 'somesecretkey123'
+
 
 class User:
     def __init__(self, id, username, password):
@@ -12,9 +13,21 @@ class User:
     def __repr(self):
         return f'<User: {self.username}>'
 
+
 users = []
 users.append(User(id=1, username='Anthony', password='password'))
 users.append(User(id=2, username='Oksana', password='password'))
+users.append(User(id=3, username='Carlos', password='password'))
+
+
+@app.before_request
+def before_request():
+    g.user = None
+
+    if 'user_id' in session:
+        user = [x for x in users if x.id == session['user_id']][0]
+        g.user = user
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -34,6 +47,10 @@ def login():
 
     return render_template('login.html')
 
+
 @app.route('/profile')
 def profile():
+    if not g.user:
+        return redirect(url_for('login'))
+
     return render_template('profile.html')
